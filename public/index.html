@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Bot Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Trading Bot Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Informações do Mercado</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <h2>BTCUSDT</h2>
+                            <h2 id="current-price">$ 0.00</h2>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <p>EMA9: <span id="ema9">0</span></p>
+                                <p>EMA21: <span id="ema21">0</span></p>
+                            </div>
+                            <div class="col-6">
+                                <p>ATR: <span id="atr">0</span></p>
+                                <p>RSI: <span id="rsi">0</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Estatísticas de Trading</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="stats-box text-center p-3">
+                                    <h3 id="total-buys">0</h3>
+                                    <p class="mb-0">Compras</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stats-box text-center p-3">
+                                    <h3 id="total-sales">0</h3>
+                                    <p class="mb-0">Vendas</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <h5>Posição Atual:</h5>
+                            <p id="current-position" class="mb-0">Nenhuma posição aberta</p>
+                            <p id="stop-loss" class="mt-2">Stop Loss: -</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Histórico de Operações</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Data/Hora</th>
+                                        <th>Ação</th>
+                                        <th>Preço</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="operations-history">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>
