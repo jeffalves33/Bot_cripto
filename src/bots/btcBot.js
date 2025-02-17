@@ -5,20 +5,47 @@ class TradingBot {
     constructor() {
         this.SYMBOL = 'BTCUSDT';
         this.PERIOD = 14;
-        this.INTERVAL = '1h';
-        this.LIMIT = 200;
+        this.INTERVAL = '15m';
+        this.LIMIT = 100;
         this.API_URL = 'https://api.binance.com';
         this.position = null;
-        this.portfolio = 100;
         this.stopLoss = null;
         this.qtdBuy = 0;
         this.qtdSale = 0;
         this.io = null;
+        this.isRunning = false;
+        this.intervalId = null;
+        this.priceBuy = 0;
     }
 
     start(io) {
         this.io = io;
-        setInterval(() => this.executeStrategy(), 10000);
+        this.isRunning = true;
+        this.intervalId = setInterval(() => this.executeStrategy(), 5000);
+        console.log('Bot iniciado');
+    }
+
+    stop() {
+        this.isRunning = false;
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+        }
+        if (this.position === 'long') this.manualSell();
+        console.log('Bot parado');
+    }
+
+    async manualSell() {
+        if (this.position === 'long') {
+            const candles = await this.fetchMarketData();
+            if (!candles) return;
+
+            const lastPrice = candles[candles.length - 1].close;
+            this.logOperation('Venda Manual', lastPrice, '-');
+            this.position = null;
+            this.qtdSale += 1;
+            console.log('Posição vendida manualmente');
+        }
     }
 
     averages(prices, startIndex) {
@@ -144,7 +171,13 @@ class TradingBot {
         });
     }
 
+    calculatePositionAndValue(lastPrice) {
+        return [(this.priceBuy - lastPrice), "-"];
+    }
+
     async executeStrategy() {
+        if (!this.isRunning) return;
+
         const candles = await this.fetchMarketData();
         if (!candles) return;
 
@@ -158,7 +191,10 @@ class TradingBot {
         const prevEMA21 = ema21[ema21.length - 2];
         const lastEMA9 = ema9[ema9.length - 1];
         const lastEMA21 = ema21[ema21.length - 1];
-
+        const [priceBuyOrLoss, percentageBuyOrLoss] = this.calculatePositionAndValue(lastPrice);
+        const crossedAbove = prevEMA9 <= prevEMA21 && lastEMA9 > lastEMA21;
+        const crossedBelow = prevEMA9 >= prevEMA21 && lastEMA9 < lastEMA21;
+        
         // Emite atualização do mercado via Socket.IO
         if (this.io) {
             this.io.emit('marketUpdate', {
@@ -170,46 +206,34 @@ class TradingBot {
                 position: this.position,
                 stopLoss: this.stopLoss,
                 qtdBuy: this.qtdBuy,
-                qtdSale: this.qtdSale
+                qtdSale: this.qtdSale,
+                priceBuyOrLoss: priceBuyOrLoss,
+                percentageBuyOrLoss: percentageBuyOrLoss
             });
         }
 
-        const crossedAbove = prevEMA9 <= prevEMA21 && lastEMA9 > lastEMA21;
-        const crossedBelow = prevEMA9 >= prevEMA21 && lastEMA9 < lastEMA21;
-
-        console.log(`$: ${lastPrice}`);
-        console.log(`Compras: ${this.qtdBuy}\nVendas: ${this.qtdSale}`);
-        console.log(`EMA9: ${lastEMA9}\nEMA21: ${lastEMA21}\nATR: ${atr}`);
-        console.log(`RSI: ${rsi}`);
-
+        // compra
         if (crossedAbove && rsi > 50 && (!this.position || this.position === 'short')) {
             this.logOperation('Compra', lastPrice, rsi);
             this.position = 'long';
-            this.portfolio -= 1;
             this.qtdBuy += 1;
-            this.stopLoss = lastPrice - atr * 1.5;
+            this.stopLoss = lastPrice - atr * 3;
+            this.priceBuy = lastPrice;
             console.log(`Sinal de compra detectado. Stop Loss definido em ${this.stopLoss}`);
         }
 
-        if (crossedBelow && rsi < 50 && this.position === 'long') {
+        // venda quando curvas se cruzam novamente OU se rsi > 60
+        if ((crossedBelow && rsi < 50 && this.position === 'long') || (this.position === 'long' && rsi > 60)) {
             this.logOperation('Venda', lastPrice, rsi);
             this.position = 'short';
-            this.portfolio += 2;
             this.qtdSale += 1;
-            this.stopLoss = lastPrice + atr * 1.5;
-            console.log(`Sinal de venda detectado. Stop Loss definido em ${this.stopLoss}`);
         }
 
+        // stop loss
         if (this.position === 'long' && lastPrice <= this.stopLoss) {
             this.logOperation('Stop Loss - Venda', lastPrice, rsi);
             this.position = null;
             console.log('Stop Loss acionado! Saindo da posição de compra.');
-        }
-
-        if (this.position === 'short' && lastPrice >= this.stopLoss) {
-            this.logOperation('Stop Loss - Compra', lastPrice, rsi);
-            this.position = null;
-            console.log('Stop Loss acionado! Saindo da posição de venda.');
         }
     }
 }

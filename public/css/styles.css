@@ -1,3 +1,4 @@
+/* Estilos existentes */
 .stats-box {
     background-color: #f8f9fa;
     border-radius: 8px;
@@ -47,4 +48,46 @@
 .rsi-below {
     color: #dc3545;
     font-weight: bold;
+}
+
+/* Novos estilos para a página inicial */
+.card {
+    transition: transform 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.features-list {
+    font-size: 0.9rem;
+}
+
+.features-list ul {
+    padding-left: 20px;
+    margin-bottom: 0;
+}
+
+.features-list li {
+    margin-bottom: 5px;
+}
+
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+/* Ajustes para as imagens dos cards */
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+    object-position: center;
+    background-color: #f8f9fa; /* Cor de fundo para quando a imagem está carregando */
+}
+
+.card:hover .card-img-top {
+    opacity: 0.9;
+    transition: opacity 0.2s ease-in-out;
 }
