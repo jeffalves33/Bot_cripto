@@ -61,7 +61,7 @@
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-.features-list {
+/*.features-list {
     font-size: 0.9rem;
 }
 
@@ -72,12 +72,7 @@
 
 .features-list li {
     margin-bottom: 5px;
-}
-
-.card-img-top {
-    height: 200px;
-    object-fit: cover;
-}
+}*/
 
 /* Ajustes para as imagens dos cards */
 .card-img-top {

@@ -1,12 +1,12 @@
 const bots = [
     {
-        id: 'btc-bot',
-        name: 'BTC Trading Bot',
-        description: 'Bot de trading automatizado para Bitcoin usando estratégia EMA Cross com RSI',
+        id: '1',
+        name: 'Turtle',
+        description: 'A tartaruga simboliza paciência e segurança, movendo-se devagar, mas sempre chegando ao seu destino.',
         symbol: 'BTCUSDT',
-        status: 'active',
+        status: 'Conservador',
         created: '2024-02-15',
-        thumbnail: '/images/bots/btc-bot.png' || '/images/defaults/bot-default.png',
+        thumbnail: '/images/bots/turtle.png' || '/images/defaults/bot-default.png',
         features: [
             'Análise técnica com EMA9 e EMA21',
             'Confirmação com RSI',

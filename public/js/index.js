@@ -25,24 +25,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             clone.querySelector('.description').textContent = bot.description;
 
             // Preenche as características
-            const featuresList = clone.querySelector('.features');
+            /*const featuresList = clone.querySelector('.features');
             bot.features.forEach(feature => {
                 const li = document.createElement('li');
                 li.textContent = feature;
                 featuresList.appendChild(li);
-            });
+            });*/
 
             // Status badge
             const statusBadge = clone.querySelector('.badge');
-            statusBadge.textContent = bot.status === 'active' ? 'Ativo' : 'Inativo';
-            statusBadge.classList.add(bot.status === 'active' ? 'bg-success' : 'bg-secondary');
+            statusBadge.textContent = bot.status;
+            statusBadge.classList.add('bg-success');
 
             // Link para o dashboard
             const link = clone.querySelector('.btn');
             link.href = `/dashboard.html?bot=${bot.id}`;
-
-            // Data de criação
-            clone.querySelector('.created-date').textContent = new Date(bot.created).toLocaleDateString();
 
             container.appendChild(clone);
         });
