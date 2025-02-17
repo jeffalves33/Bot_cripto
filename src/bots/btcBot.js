@@ -1,5 +1,6 @@
 const axios = require('axios');
 const fs = require('fs');
+require('dotenv').config();
 
 class TradingBot {
     constructor() {
@@ -7,7 +8,7 @@ class TradingBot {
         this.PERIOD = 14;
         this.INTERVAL = '15m';
         this.LIMIT = 100;
-        this.API_URL = 'https://api.binance.com';
+        this.API_URL = process.env.API_URL_BINANCE_TEST; //'https://data.binance.com';
         this.position = null;
         this.stopLoss = null;
         this.qtdBuy = 0;
