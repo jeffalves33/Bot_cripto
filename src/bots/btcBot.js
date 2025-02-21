@@ -56,6 +56,26 @@ class TradingBot {
         }
     }
 
+    async manualBuy() {
+        if (this.position !== null) return;
+        if (this.fakeBank < this.moneyInput) return;
+        const candles = await this.fetchMarketData();
+        if (!candles) return;
+        const lastPrice = candles[candles.length - 1].close;
+
+        this.entryPrice = lastPrice;
+        this.position = 'long';
+        this.fakeBank -= this.moneyInput;
+        this.qtdBuy += 1;
+        this.logOperation('Compra Manual', lastPrice);
+
+        this.io.emit('marketUpdate', {
+            lastPrice,
+            position: this.position,
+            fakeBank: this.fakeBank,
+            qtdBuy: this.qtdBuy,
+        });
+    }
 
     averages(prices, startIndex) {
         let gains = 0, losses = 0;

@@ -4,6 +4,7 @@ const socket = io();
 const elements = {
     atr: document.getElementById('atr'),
     botName: document.getElementById('bot-name'),
+    buyPosition: document.getElementById('buyPosition'),
     currentPosition: document.getElementById('current-position'),
     currentPrice: document.getElementById('current-price'),
     ema9: document.getElementById('ema9'),
@@ -45,6 +46,13 @@ elements.sellPosition.addEventListener('click', () => {
     socket.emit('manual-sell', botId);
     elements.sellPosition.disabled = true;
 });
+
+elements.buyPosition.addEventListener('click', () => {
+    const botId = getUrlParameter('bot');
+    socket.emit('manual-buy', botId);
+    elements.buyPosition.disabled = true; // Desativa o botão após a compra
+});
+
 
 // Função para obter parâmetros da URL
 function getUrlParameter(name) {
@@ -111,6 +119,7 @@ socket.on('marketUpdate', (data) => {
 
     // Atualiza o botão de venda baseado na posição
     elements.sellPosition.disabled = data.position !== 'long';
+    elements.buyPosition.disabled = data.position !== null;
 
     if (data.position === 'long') {
         elements.currentPosition.textContent = 'COMPRADO';

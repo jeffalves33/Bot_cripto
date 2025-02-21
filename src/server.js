@@ -41,7 +41,11 @@ io.on('connection', (socket) => {
     socket.on('manual-sell', (botId) => {
         btcBot.manualSell();
     });
-    
+
+    socket.on('manual-buy', (botId) => {
+        btcBot.manualBuy();
+    });
+
     socket.on('disconnect', () => {
         console.log('Cliente desconectado');
     });
