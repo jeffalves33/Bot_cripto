@@ -16,6 +16,11 @@
     font-weight: bold;
 }
 
+#fake-bank {
+    color: #0d6efd;
+    font-weight: bold;
+}
+
 #operations-history tr:first-child {
     background-color: #f8f9fa;
 }

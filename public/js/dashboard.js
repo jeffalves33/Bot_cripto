@@ -2,22 +2,23 @@ const socket = io();
 
 // Elementos do DOM
 const elements = {
+    atr: document.getElementById('atr'),
     botName: document.getElementById('bot-name'),
+    currentPosition: document.getElementById('current-position'),
     currentPrice: document.getElementById('current-price'),
     ema9: document.getElementById('ema9'),
     ema21: document.getElementById('ema21'),
-    atr: document.getElementById('atr'),
-    rsi: document.getElementById('rsi'),
-    totalBuys: document.getElementById('total-buys'),
-    totalSales: document.getElementById('total-sales'),
-    currentPosition: document.getElementById('current-position'),
-    stopLoss: document.getElementById('stop-loss'),
-    positionPercentage: document.getElementById('position-percentage'),
-    positionValue: document.getElementById('position-value'),
+    fakeBank: document.getElementById('fake-bank'),
     operationsHistory: document.getElementById('operations-history'),
+    rsi: document.getElementById('rsi'),
+    sellPosition: document.getElementById('sellPosition'),
+    soundGain: document.getElementById('sound_gain'),
+    soundLoss: document.getElementById('sound_loss'),
     startBot: document.getElementById('startBot'),
     stopBot: document.getElementById('stopBot'),
-    sellPosition: document.getElementById('sellPosition')
+    stopLoss: document.getElementById('stop-loss'),
+    totalBuys: document.getElementById('total-buys'),
+    totalSales: document.getElementById('total-sales'),
 };
 
 let isRunning = false;
@@ -99,6 +100,8 @@ socket.on('marketUpdate', (data) => {
 
     elements.atr.textContent = parseFloat(data.atr).toFixed(2);
 
+    elements.fakeBank.textContent = "$ " + parseFloat(data.fakeBank).toFixed(5);
+
     const rsiValue = parseFloat(data.rsi);
     elements.rsi.textContent = rsiValue.toFixed(2);
     elements.rsi.className = rsiValue > 50 ? 'rsi-above' : 'rsi-below';
@@ -113,13 +116,6 @@ socket.on('marketUpdate', (data) => {
         elements.currentPosition.textContent = 'COMPRADO';
         elements.currentPosition.className = 'position-long';
         elements.stopLoss.textContent = `Stop Loss: $ ${parseFloat(data.stopLoss).toFixed(2)}`;
-        if (data.percentageBuyOrLoss >= 0) {
-            elements.positionValue.textContent = `$ ${data.priceBuyOrLoss}`
-            elements.positionValue.className = 'position-long';
-        } else {
-            elements.positionValue.textContent = `$ ${data.priceBuyOrLoss}`
-            elements.positionValue.className = 'position-short';
-        }
     } else if (data.position === 'short') {
         elements.currentPosition.textContent = 'VENDIDO';
         elements.currentPosition.className = 'position-short';
@@ -134,10 +130,30 @@ socket.on('marketUpdate', (data) => {
 // Adiciona nova operação ao histórico
 socket.on('newOperation', (operation) => {
     const row = document.createElement('tr');
+
+    // Add profit/loss information if available
+    let profitDisplay = '';
+    if (operation.profit !== null) {
+        const isProfit = operation.profit > 0;
+        profitDisplay = `<td class="${isProfit ? 'text-success' : 'text-danger'}">
+        ${isProfit ? '+' : ''}$ ${Math.abs(parseFloat(operation.profit)).toFixed(5)}
+        </td>`;
+
+        // Play appropriate sound
+        if (isProfit) {
+            elements.soundGain.play();
+        } else {
+            elements.soundLoss.play();
+        }
+    } else {
+        profitDisplay = '<td>-</td>';
+    }
+
     row.innerHTML = `
         <td>${new Date(operation.timestamp).toLocaleString()}</td>
         <td>${operation.action}</td>
-        <td>$ ${parseFloat(operation.price).toFixed(2)}</td>
+        <td>$ ${parseFloat(operation.price).toFixed(3)}</td>
+        ${profitDisplay}
     `;
 
     elements.operationsHistory.insertBefore(row, elements.operationsHistory.firstChild);

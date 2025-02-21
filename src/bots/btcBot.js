@@ -6,7 +6,7 @@ class TradingBot {
     constructor() {
         this.SYMBOL = 'BTCUSDT';
         this.PERIOD = 14;
-        this.INTERVAL = '15m';
+        this.INTERVAL = '1s'; //15m
         this.LIMIT = 100;
         this.API_URL = process.env.API_URL_BINANCE_TEST; //'https://data.binance.com';
         this.position = null;
@@ -16,13 +16,15 @@ class TradingBot {
         this.io = null;
         this.isRunning = false;
         this.intervalId = null;
-        this.priceBuy = 0;
+        this.fakeBank = 100;
+        this.moneyInput = 10;
+        this.entryPrice = null;
     }
 
     start(io) {
         this.io = io;
         this.isRunning = true;
-        this.intervalId = setInterval(() => this.executeStrategy(), 5000);
+        this.intervalId = setInterval(() => this.executeStrategy(), 2000);
         console.log('Bot iniciado');
     }
 
@@ -42,12 +44,18 @@ class TradingBot {
             if (!candles) return;
 
             const lastPrice = candles[candles.length - 1].close;
-            this.logOperation('Venda Manual', lastPrice, '-');
+
+            // Mesmo cálculo de totalReceived
+            const btcAmount = this.moneyInput / this.entryPrice;
+            const totalReceived = btcAmount * lastPrice;
+            this.fakeBank += totalReceived;
+
+            this.logOperation('Venda Manual', lastPrice);
             this.position = null;
             this.qtdSale += 1;
-            console.log('Posição vendida manualmente');
         }
     }
+
 
     averages(prices, startIndex) {
         let gains = 0, losses = 0;
@@ -151,12 +159,21 @@ class TradingBot {
         }
     }
 
-    logOperation(action, price, rsi) {
+    logOperation(action, price) {
         const timestamp = new Date().toISOString();
+        let profit = null;
+
+        if (action.includes('Venda') && this.entryPrice) {
+            // se "price" é o valor de venda
+            const btcAmount = this.moneyInput / this.entryPrice;
+            const totalReceived = btcAmount * price; // quanto recebi na venda
+            profit = totalReceived - this.moneyInput; // subtraindo o que investi
+        }
         const operation = {
             timestamp,
             action,
-            price
+            price,
+            profit
         };
 
         // Emite o evento de nova operação via Socket.IO
@@ -164,16 +181,12 @@ class TradingBot {
             this.io.emit('newOperation', operation);
         }
 
-        const log = `${timestamp} - ${action} at ${price} | rsi: ${rsi}\n`;
+        const log = `${timestamp} - ${action} at ${price}\n`;
         fs.appendFile('operations_history.txt', log, (err) => {
             if (err) {
                 console.error('Erro ao salvar operação:', err);
             }
         });
-    }
-
-    calculatePositionAndValue(lastPrice) {
-        return [(this.priceBuy - lastPrice), "-"];
     }
 
     async executeStrategy() {
@@ -192,10 +205,9 @@ class TradingBot {
         const prevEMA21 = ema21[ema21.length - 2];
         const lastEMA9 = ema9[ema9.length - 1];
         const lastEMA21 = ema21[ema21.length - 1];
-        const [priceBuyOrLoss, percentageBuyOrLoss] = this.calculatePositionAndValue(lastPrice);
         const crossedAbove = prevEMA9 <= prevEMA21 && lastEMA9 > lastEMA21;
         const crossedBelow = prevEMA9 >= prevEMA21 && lastEMA9 < lastEMA21;
-        
+
         // Emite atualização do mercado via Socket.IO
         if (this.io) {
             this.io.emit('marketUpdate', {
@@ -208,34 +220,55 @@ class TradingBot {
                 stopLoss: this.stopLoss,
                 qtdBuy: this.qtdBuy,
                 qtdSale: this.qtdSale,
-                priceBuyOrLoss: priceBuyOrLoss,
-                percentageBuyOrLoss: percentageBuyOrLoss
+                fakeBank: this.fakeBank
             });
         }
 
         // compra
-        if (crossedAbove && rsi > 50 && (!this.position || this.position === 'short')) {
-            this.logOperation('Compra', lastPrice, rsi);
+        if (crossedAbove && rsi > 45 && (!this.position)) {
+            this.logOperation('Compra', lastPrice);
             this.position = 'long';
             this.qtdBuy += 1;
-            this.stopLoss = lastPrice - atr * 3;
-            this.priceBuy = lastPrice;
-            console.log(`Sinal de compra detectado. Stop Loss definido em ${this.stopLoss}`);
+            this.entryPrice = lastPrice;
+            this.stopLoss = lastPrice - atr * 5;
+            this.fakeBank -= this.moneyInput;
         }
 
         // venda quando curvas se cruzam novamente OU se rsi > 60
-        if ((crossedBelow && rsi < 50 && this.position === 'long') || (this.position === 'long' && rsi > 60)) {
-            this.logOperation('Venda', lastPrice, rsi);
-            this.position = 'short';
+        //if (this.position === 'long' && ((crossedBelow && rsi < 50) || rsi > 95)) {
+        if (this.position === 'long' && rsi > 75) {
+            // 1) Calcula a quantidade de BTC comprada
+            const btcAmount = this.moneyInput / this.entryPrice;
+
+            // 2) Calcula o total em USDT recebido na venda
+            const totalReceived = btcAmount * lastPrice;
+
+            // 3) Soma ao saldo
+            this.fakeBank += totalReceived;
+
+            // 4) Loga a operação
+            this.logOperation('Venda', lastPrice);
+
+            // 5) Reseta a posição
+            this.position = null;
+            this.entryPrice = null;
             this.qtdSale += 1;
         }
 
+
         // stop loss
         if (this.position === 'long' && lastPrice <= this.stopLoss) {
-            this.logOperation('Stop Loss - Venda', lastPrice, rsi);
+            const btcAmount = this.moneyInput / this.entryPrice;
+            const totalReceived = btcAmount * lastPrice;
+
+            this.fakeBank += totalReceived;
+
+            this.logOperation('Venda (stop loss)', lastPrice);
             this.position = null;
-            console.log('Stop Loss acionado! Saindo da posição de compra.');
+            this.entryPrice = null;
+            this.qtdSale += 1;
         }
+
     }
 }
 
